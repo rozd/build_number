@@ -26,27 +26,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(require("@actions/core"));
 const github_1 = require("@actions/github");
 async function run() {
+    if (!process.env.GITHUB_TOKEN) {
+        core.setFailed('GITHUB_TOKEN is not set');
+        return;
+    }
+    const octokit = (0, github_1.getOctokit)(process.env.GITHUB_TOKEN);
+    let buildNumber = 1;
     try {
-        if (!process.env.GITHUB_TOKEN) {
-            core.setFailed('GITHUB_TOKEN is not set');
-            return;
-        }
-        const octokit = (0, github_1.getOctokit)(process.env.GITHUB_TOKEN);
-        let buildNumber = 1;
-        try {
-            const res = await octokit.rest.actions.getRepoVariable({
-                owner: github_1.context.repo.owner,
-                repo: github_1.context.repo.repo,
-                name: 'BUILD_NUMBER',
-            });
-            if (res.status >= 200 && res.status < 300) {
-                buildNumber = res.data.value
-                    ? parseInt(res.data.value) + 1
-                    : 1;
-            }
-        }
-        catch (error) {
-            console.warn(error);
+        const res = await octokit.rest.actions.getRepoVariable({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            name: 'BUILD_NUMBER',
+        });
+        if (res.status >= 200 && res.status < 300 && !!res.data.value) {
+            buildNumber = parseInt(res.data.value) + 1;
         }
         await octokit.rest.actions.updateRepoVariable({
             owner: github_1.context.repo.owner,
@@ -54,11 +47,16 @@ async function run() {
             name: 'BUILD_NUMBER',
             value: buildNumber.toString(),
         });
-        core.setOutput('build_number', buildNumber.toString());
     }
     catch (error) {
-        console.error(error);
+        await octokit.rest.actions.createRepoVariable({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            name: 'BUILD_NUMBER',
+            value: buildNumber.toString(),
+        });
     }
+    core.setOutput('build_number', buildNumber.toString());
 }
 run();
 //# sourceMappingURL=index.js.map
