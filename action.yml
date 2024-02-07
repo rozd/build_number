@@ -1,0 +1,13 @@
+name: 'Build Number'
+description: ''
+inputs:
+  start_with:
+    description: ''
+    required: false
+    default: '1'
+outputs:
+  build_number:
+    description: ''
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
