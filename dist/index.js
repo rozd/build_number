@@ -32,14 +32,22 @@ async function run() {
             return;
         }
         const octokit = (0, github_1.getOctokit)(process.env.GITHUB_TOKEN);
-        const res = await octokit.rest.actions.getRepoVariable({
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            name: 'BUILD_NUMBER',
-        });
-        const buildNumber = !!res.data.value
-            ? parseInt(res.data.value) + 1
-            : 1;
+        let buildNumber = 1;
+        try {
+            const res = await octokit.rest.actions.getRepoVariable({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                name: 'BUILD_NUMBER',
+            });
+            if (res.status >= 200 && res.status < 300) {
+                buildNumber = res.data.value
+                    ? parseInt(res.data.value) + 1
+                    : 1;
+            }
+        }
+        catch (error) {
+            console.warn(error);
+        }
         await octokit.rest.actions.updateRepoVariable({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
