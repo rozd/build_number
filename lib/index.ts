@@ -12,15 +12,23 @@ async function run() {
       process.env.GITHUB_TOKEN,
     );
 
-    const res = await octokit.rest.actions.getRepoVariable({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      name: 'BUILD_NUMBER',
-    });
+    let buildNumber = 1;
 
-    const buildNumber = !!res.data.value
-      ? parseInt(res.data.value) + 1
-      : 1;
+    try {
+      const res = await octokit.rest.actions.getRepoVariable({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        name: 'BUILD_NUMBER',
+      });
+
+      if (res.status >= 200 && res.status < 300) {
+        buildNumber = res.data.value
+          ? parseInt(res.data.value) + 1
+          : 1;
+      }
+    } catch (error) {
+      console.warn(error);
+    }
 
     await octokit.rest.actions.updateRepoVariable({
       owner: context.repo.owner,
